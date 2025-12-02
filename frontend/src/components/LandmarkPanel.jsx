@@ -13,7 +13,9 @@ function LandmarkPanel({ selected, onAdd }) {
           boxSizing: 'border-box',
         }}
       >
-        <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>랜드마크 상세</h2>
+        <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+          랜드마크 상세
+        </h2>
         <p style={{ fontSize: '13px', color: '#6b7280' }}>
           지도 영역이나 아래 랜드마크 카드 중 하나를 선택하면
           <br />

@@ -1,7 +1,84 @@
 // src/pages/Main.jsx
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import LandmarkPanel from '../components/LandmarkPanel';
+
+// Leaflet 기본 아이콘 설정 (Vite 환경에서 경로 이슈 방지용)
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl:
+    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl:
+    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// 색깔 있는 마커 아이콘 (나라별)
+const baseMarkerSize = [25, 41];
+const baseMarkerAnchor = [12, 41];
+
+const COLORED_MARKERS = {
+  JP: L.icon({
+    iconUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    iconRetinaUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl:
+      'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: baseMarkerSize,
+    iconAnchor: baseMarkerAnchor,
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  }),
+  UK: L.icon({
+    iconUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    iconRetinaUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    shadowUrl:
+      'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: baseMarkerSize,
+    iconAnchor: baseMarkerAnchor,
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  }),
+  TH: L.icon({
+    iconUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    iconRetinaUrl:
+      'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    shadowUrl:
+      'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: baseMarkerSize,
+    iconAnchor: baseMarkerAnchor,
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  }),
+};
+
+// 선택된 마커는 살짝 크게
+const SELECTED_MARKER = L.icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+  iconRetinaUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+  shadowUrl:
+    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [30, 49],
+  iconAnchor: [15, 49],
+  popupAnchor: [1, -40],
+  shadowSize: [41, 41],
+});
+
+// 나라별 지도 중심 좌표
+const MAP_CENTER_BY_COUNTRY = {
+  JP: [35.6764, 139.65], // 도쿄 근처
+  UK: [51.5074, -0.1278], // 런던
+  TH: [13.7563, 100.5018], // 방콕
+};
 
 // 나라별 더미 랜드마크 데이터
 const LANDMARKS_BY_COUNTRY = {
@@ -71,9 +148,10 @@ function useCountryFromQuery() {
 
 function Main() {
   const countryCode = useCountryFromQuery();
-  const [selected, setSelected] = useState(null);
-  const [plan, setPlan] = useState([]); // 일정에 담긴 랜드마크 목록
   const navigate = useNavigate();
+
+  const [selected, setSelected] = useState(null); // 패널에 보일 현재 선택
+  const [plan, setPlan] = useState([]); // 일정에 담긴 랜드마크 목록
 
   const landmarks = LANDMARKS_BY_COUNTRY[countryCode] || [];
   const countryLabel = COUNTRY_LABEL[countryCode] || '여행지';
@@ -93,6 +171,8 @@ function Main() {
       },
     });
   };
+
+  const countryMarkerIcon = COLORED_MARKERS[countryCode] || L.Icon.Default;
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
@@ -128,22 +208,49 @@ function Main() {
           </p>
         </header>
 
-        {/* 지도 영역 (화면설계서의 큰 지도 박스 자리) */}
+        {/* 지도 영역 */}
         <div
           style={{
             flex: 1,
             margin: '16px 24px 8px',
             borderRadius: '16px',
             border: '1px solid #e5e7eb',
-            background: '#f3f4f6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '13px',
-            color: '#6b7280',
+            overflow: 'hidden',
           }}
         >
-          여기 지도(Map API)가 들어갈 예정입니다.
+          <MapContainer
+            center={MAP_CENTER_BY_COUNTRY[countryCode] || [51.505, -0.09]}
+            zoom={12}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {landmarks.map((lm) => (
+              <Marker
+                key={lm.id}
+                position={[lm.lat, lm.lng]}
+                icon={
+                  selected && selected.id === lm.id
+                    ? SELECTED_MARKER
+                    : countryMarkerIcon
+                }
+                eventHandlers={{
+                  click: () => setSelected(lm),
+                }}
+              >
+                <Popup>
+                  <div style={{ fontSize: '13px' }}>
+                    <strong>{lm.name}</strong>
+                    <br />
+                    {lm.description}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
         </div>
 
         {/* 하단: 랜드마크 카드 리스트 + 리포트 버튼 */}
@@ -167,24 +274,37 @@ function Main() {
               overflowX: 'auto',
             }}
           >
-            {landmarks.map((lm) => (
-              <li
-                key={lm.id}
-                onClick={() => setSelected(lm)}
-                style={{
-                  minWidth: '160px',
-                  padding: '10px 12px',
-                  borderRadius: '12px',
-                  border: '1px solid #e5e7eb',
-                  background: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                }}
-              >
-                <div style={{ fontWeight: 600, marginBottom: '4px' }}>{lm.name}</div>
-                <div style={{ fontSize: '12px', color: '#6b7280' }}>{lm.description}</div>
-              </li>
-            ))}
+            {landmarks.map((lm) => {
+              const isSelected = selected && selected.id === lm.id;
+              return (
+                <li
+                  key={lm.id}
+                  onClick={() => setSelected(lm)}
+                  style={{
+                    minWidth: '160px',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    border: isSelected
+                      ? '2px solid #111827'
+                      : '1px solid #e5e7eb',
+                    background: isSelected ? '#f3f4ff' : '#ffffff',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    boxShadow: isSelected
+                      ? '0 0 0 1px rgba(17,24,39,0.1)'
+                      : 'none',
+                    transition: 'background 0.15s, border 0.15s, box-shadow 0.15s',
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                    {lm.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                    {lm.description}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           <button
