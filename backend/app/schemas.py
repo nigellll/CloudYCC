@@ -1,6 +1,9 @@
 from pydantic import BaseModel
-
-# 날씨 정보를 담을 데이터 구조 (DTO)
+#거리
+class DistanceResponse(BaseModel):
+    distance_km: float      # 거리 (km)
+    duration_min: float     # 소요 시간 (분)
+#날씨
 class WeatherResponse(BaseModel):
     temperature: float      # 온도
     status: str             # 간단 상태 (맑음, 흐림, 비 등)

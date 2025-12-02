@@ -1,5 +1,5 @@
 import requests
-from app.schemas.weather import WeatherResponse # 위에서 만든 스키마 임포트
+from app.schemas import WeatherResponse
 
 class WeatherService:
     BASE_URL = "https://api.open-meteo.com/v1/forecast"
@@ -14,7 +14,7 @@ class WeatherService:
 
         try:
             response = requests.get(WeatherService.BASE_URL, params=params)
-            response.raise_for_status() # 200 OK가 아니면 에러 발생
+            response.raise_for_status() 
             
             data = response.json()
             current = data.get("current_weather", {})
@@ -22,10 +22,10 @@ class WeatherService:
             temp = current.get("temperature", 0.0)
             code = current.get("weathercode", 0)
 
-            # --- 날씨 판별 로직 (이전에 설명한 내용 적용) ---
+            # --- 날씨 판별 로직 ---
             status = "알 수 없음"
             description = ""
-            icon_type = "unknown"
+            icon_type = "unknown"  # ✅ 변수명 icon_type 유지
 
             if code == 0:
                 status = "맑음"
@@ -52,17 +52,17 @@ class WeatherService:
                 description = "날씨가 좋지 않습니다. 실내에 계세요. ⛈️"
                 icon_type = "stormy"
 
-            # 스키마에 맞춰서 데이터 리턴
+            # ✅ 스키마의 icon_type에 맞춰서 리턴
             return WeatherResponse(
                 temperature=temp,
                 status=status,
                 description=description,
-                icon_type=icon_type
+                icon_type=icon_type 
             )
 
         except Exception as e:
             print(f"Weather API Error: {e}")
-            # 에러 발생 시 기본값 리턴 혹은 에러 처리
+            # 에러 발생 시에도 icon_type으로 리턴
             return WeatherResponse(
                 temperature=0.0, 
                 status="Error", 

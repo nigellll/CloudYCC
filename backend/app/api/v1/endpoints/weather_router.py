@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from app.services.weather_service import WeatherService
 from app.services.distance_service import DistanceService
-from app.schemas.weather import WeatherResponse
-from app.schemas.distance import DistanceResponse
+
+from app.schemas import WeatherResponse, DistanceResponse
 
 router = APIRouter()
 

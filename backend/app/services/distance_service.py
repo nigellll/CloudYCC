@@ -1,5 +1,5 @@
 import requests
-from app.schemas.distance import DistanceResponse
+from app.schemas import DistanceResponse
 
 class DistanceService:
     BASE_URL = "http://router.project-osrm.org/route/v1/driving"
